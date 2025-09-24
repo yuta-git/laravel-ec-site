@@ -21,6 +21,7 @@ return new class extends Migration
         ->onUpdate('cascade')
         ->onDelete('restrict');
 
+      // $table->char('uuid', 36)->unique();
       $table->char('uuid', 36)->unique();
       $table->string('name', 255);
       $table->text('description');
