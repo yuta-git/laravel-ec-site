@@ -16,7 +16,7 @@ class ProductImageFactory extends Factory
    */
   public function definition(): array
   {
-    
+
     $sampleImages = [
       'images/products/sample1.jpg',
       'images/products/sample2.jpg',
@@ -30,5 +30,26 @@ class ProductImageFactory extends Factory
       'image_path' => $this->faker->randomElement($sampleImages),
       'image_type' => null // Seederで設定
     ];
+  }
+
+  public function mainImage(): static
+  {
+    return $this->state(fn(array $attributes) => [
+      'image_type' => 0,
+    ]);
+  }
+
+  public function subImageOne(): static
+  {
+    return $this->state(fn(array $attributes) => [
+      'image_type' => 1,
+    ]);
+  }
+
+  public function subImageTwo(): static
+  {
+    return $this->state(fn(array $attributes) => [
+      'image_type' => 2,
+    ]);
   }
 }

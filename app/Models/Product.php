@@ -10,9 +10,6 @@ use Illuminate\Support\Str;
 class Product extends Model
 {
   use HasFactory;
-  
-  // uuid の生成(36文字ユニーク)
-  // use HasUuids;
 
   protected $fillable = [
     'uuid',

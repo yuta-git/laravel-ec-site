@@ -15,20 +15,14 @@ class ProductImagesTableSeeder extends Seeder
   public function run(): void
   {
     Product::all()->each(function ($product) {
-      // image_type = 0 (メイン画像)
-      ProductImage::factory()->create([
+      ProductImage::factory()->mainImage()->create([
         'product_id' => $product->id,
-        'image_type' => 0
       ]);
-      // サブ画像1
-      ProductImage::factory()->create([
+      ProductImage::factory()->subImageOne()->create([
         'product_id' => $product->id,
-        'image_type' => 1
       ]);
-      // サブ画像2
-      ProductImage::factory()->create([
+      ProductImage::factory()->subImageTwo()->create([
         'product_id' => $product->id,
-        'image_type' => 2
       ]);
     });
   }
