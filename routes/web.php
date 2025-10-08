@@ -5,12 +5,13 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
 
 
-// 管理者用ダッシュボード（認証必要）
-Route::get('/admin/dashboard', function () {
+Route::middleware(['auth', 'verified'])->group(function () {
+  // ダッシュボード(管理者用)
+  Route::get('/admin/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+  })->name('dashboard');
 
-Route::middleware(['auth'])->group(function () {
+  // 商品(管理者用)
   Route::prefix('admin/products')
     ->group(function () {
       Route::controller(ProductController::class)
@@ -20,13 +21,12 @@ Route::middleware(['auth'])->group(function () {
           Route::get('/create', 'create')->name('create');
           Route::post('/', 'store')->name('store');
           Route::prefix('/{uuid}')
-            ->group(function(){
+            ->group(function () {
               Route::get('', 'show')->name('show');
               Route::get('/edit', 'edit')->name('edit');
               Route::put('', 'update')->name('update');
               Route::delete('', 'destroy')->name('destroy');
             });
-          
         });
     });
 });

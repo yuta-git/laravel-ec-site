@@ -9,6 +9,8 @@ use App\Models\Category;
 use App\Http\Requests\ProductStoreRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+
 
 class ProductController extends Controller
 {
@@ -27,7 +29,7 @@ class ProductController extends Controller
    */
   public function create()
   {
-    $categories = Category::select('id', 'name', 'sort_order')->orderBy('sort_order')->get();
+    $categories = Category::getOrderedCategories();
     return view('products.create', compact('categories'));
   }
 
@@ -61,21 +63,24 @@ class ProductController extends Controller
       ]);
 
       // メイン画像の処理（image_type = 0）
-      $this->saveProductImage($request, $product, 'main_image', 0);
+      ProductImage::saveProductImage($request, $product, 'main_image', 0);
 
       // サブ画像1の処理（image_type = 1）
-      $this->saveProductImage($request, $product, 'sub_image_1', 1);
+      ProductImage::saveProductImage($request, $product, 'sub_image_1', 1);
 
       // サブ画像2の処理（image_type = 2）
-      $this->saveProductImage($request, $product, 'sub_image_2', 2);
+      ProductImage::saveProductImage($request, $product, 'sub_image_2', 2);
 
       DB::commit();
 
       return redirect()->route('products.index')
         ->with('success', '商品を登録しました');
-        
     } catch (\Exception $e) {
       DB::rollBack();
+
+      Log::error('商品作成エラー', [
+        'exception' => $e
+      ]);
 
       return redirect()->back()
         ->withInput()
@@ -91,7 +96,7 @@ class ProductController extends Controller
     $product = Product::with(['category', 'productImages'])
       ->where('uuid', $uuid)->firstOrFail();
 
-    $categories = Category::select('id', 'name', 'sort_order')->orderBy('sort_order')->get();
+    $categories = Category::getOrderedCategories();
 
     return view('products.edit', compact('product', 'categories'));
   }
@@ -104,9 +109,9 @@ class ProductController extends Controller
     // トランザクション開始（画像保存に失敗したら商品も更新しない）
     DB::beginTransaction();
 
+    $product = Product::where('uuid', $uuid)->firstOrFail();
+    
     try {
-      // UUIDで商品を取得
-      $product = Product::where('uuid', $uuid)->firstOrFail();
 
       // 商品情報を更新（画像以外）
       $product->update([
@@ -118,13 +123,13 @@ class ProductController extends Controller
       ]);
 
       // メイン画像の処理（image_type = 0）
-      $this->saveProductImage($request, $product, 'main_image', 0);
+      ProductImage::saveProductImage($request, $product, 'main_image', 0);
 
       // サブ画像1の処理（image_type = 1）
-      $this->saveProductImage($request, $product, 'sub_image_1', 1);
+      ProductImage::saveProductImage($request, $product, 'sub_image_1', 1);
 
       // サブ画像2の処理（image_type = 2）
-      $this->saveProductImage($request, $product, 'sub_image_2', 2);
+      ProductImage::saveProductImage($request, $product, 'sub_image_2', 2);
 
       DB::commit();
 
@@ -133,67 +138,55 @@ class ProductController extends Controller
     } catch (\Exception $e) {
       DB::rollBack();
 
+      Log::error('商品更新エラー', [
+        'id' => $product->id,
+        'exception' => $e
+      ]);
+
       return redirect()->back()
         ->withInput()
         ->with('error', '商品の更新に失敗しました');
     }
   }
 
-
-  private function saveProductImage($request, $product, $fieldName, $imageType)
-  {
-    if ($request->hasFile($fieldName)) {
-      // 既存の画像を確認して削除（update時のみ実行される）
-      $existingImage = ProductImage::where('product_id', $product->id)
-        ->where('image_type', $imageType)
-        ->first();
-
-      if ($existingImage) {
-        // ストレージから古い画像ファイルを削除
-        Storage::disk('public')->delete($existingImage->image_path);
-        $existingImage->delete();
-      }
-
-      // 新しい画像を保存
-      $file = $request->file($fieldName);
-      $path = $file->store('images/products', 'public');
-
-      ProductImage::create([
-        'product_id' => $product->id,
-        'image_path' => $path,
-        'image_type' => $imageType
-      ]);
-    }
-  }
-
-
   /**
    * Remove the specified resource from storage.
    */
   public function destroy($uuid)
   {
-    
+
+    $product = Product::where('uuid', $uuid)->firstOrFail();
+    $imagePaths = $product->productImages->pluck('image_path')->toArray();
+
     DB::beginTransaction();
 
     try {
-      $product = Product::where('uuid', $uuid)->firstOrFail();
-
-      // 関連する画像をストレージから削除
       foreach ($product->productImages as $image) {
-        Storage::disk('public')->delete($image->image_path);
         $image->delete();
       }
 
-      // 商品を削除
       $product->delete();
 
       DB::commit();
+      
+      // わざとエラーを起こす
+      // throw new \Exception('テスト用のエラーです');
+      
+      //ここで落ちても最悪物理ファイルが残るだけなので運用で回避してもらう  
+      foreach ($imagePaths as $path) {
+        Storage::disk('public')->delete($path);
+      }
 
       return redirect()->route('products.index')
         ->with('success', '商品を削除しました');
-        
     } catch (\Exception $e) {
       DB::rollBack();
+
+      Log::error('商品削除エラー', [
+        'id' => $product->id,
+        '画像パス' => $imagePaths,
+        'exception' => $e
+      ]);
 
       return redirect()->back()
         ->with('error', '商品の削除に失敗しました');

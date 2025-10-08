@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Category extends Model
 {
   use HasFactory;
-  
+
   protected $fillable = [
     'name',
     'sort_order',
@@ -18,4 +18,10 @@ class Category extends Model
   {
     return $this->hasMany(Product::class);
   }
+
+  public static function getOrderedCategories()
+  {
+    return self::select('id', 'name', 'sort_order')->orderBy('sort_order')->get();
+  }
+  
 }
