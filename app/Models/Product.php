@@ -41,4 +41,19 @@ class Product extends Model
   {
     return $this->hasMany(ProductImage::class);
   }
+ 
+  
+  public function mainImage() {
+    return $this->hasOne(ProductImage::class, 'product_id')->where('image_type', 0);   
+  }
+
+  public function subImage1(){
+    return $this->hasOne(ProductImage::class, 'product_id')->where('image_type', 1);
+  }
+
+
+  public function subImage2(){
+    return $this->hasOne(ProductImage::class, 'product_id')->where('image_type', 2);
+  }
+  
 }

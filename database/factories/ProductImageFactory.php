@@ -18,11 +18,11 @@ class ProductImageFactory extends Factory
   {
 
     $sampleImages = [
-      'images/products/sample1.jpg',
-      'images/products/sample2.jpg',
-      'images/products/sample3.jpg',
-      'images/products/sample4.jpg',
-      'images/products/sample5.jpg',
+      'images/products/sample/sample1.jpg',
+      'images/products/sample/sample2.jpg',
+      'images/products/sample/sample3.jpg',
+      'images/products/sample/sample4.jpg',
+      'images/products/sample/sample5.jpg',
     ];
 
     return [
