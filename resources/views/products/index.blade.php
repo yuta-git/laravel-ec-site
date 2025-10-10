@@ -17,14 +17,36 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
       <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-6 text-gray-900">
-          <!-- 戻るボタン -->
-          <div class="flex mb-4 justify-start w-full">
-            <a href="{{ route('products.create') }}"
-              class="flex text-white bg-green-500 border-0 py-2 px-6 focus:outline-none hover:bg-green-600 rounded">
-              作成</a>
-          </div>
+
+          <!-- 検索フォーム -->
+          <form method="get" action="{{route('products.index')}}">
+            <div class="flex mb-4 justify-center items-center w-2/3 gap-1 mx-auto">
+              <select id="category_id" name="category_id"
+                class="pr-7 text-sm border border-gray-300 rounded pl-2 py-2 focus:outline-none focus:ring-2"
+                style="width: auto !important;">
+                <option value="">全て</option>
+                @foreach($categories ?? [] as $category)
+                <option value=" {{ $category->id }}"
+                  {{ (string)old('category_id', $categoryId) === (string)$category->id ? 'selected' : '' }}>
+                  {{ $category->name }}
+                </option>
+                @endforeach
+              </select>
+              <input class="flex-1 border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2" type="text"
+                name="search" placeholder="商品検索" value="{{ old('search' , $search) }}">
+              <button class="flex-shrink-0 text-white bg-blue-500 border-0 py-2 px-2 focus:outline-none hover:bg-blue-600 rounded
+                text-lg">検索</button>
+            </div>
+          </form>
+
           <section class="text-gray-600 body-font">
             <div class="container px-5 py-24 mx-auto">
+              <!-- 作成ボタン -->
+              <div class="flex mb-8 justify-start w-full">
+                <a href="{{ route('products.create') }}"
+                  class="flex text-white bg-green-500 border-0 py-2 px-6 focus:outline-none hover:bg-green-600 rounded">
+                  作成</a>
+              </div>
               <div class="flex flex-wrap -m-4">
                 @foreach($products as $product)
                 <div class="p-4 md:w-1/3">

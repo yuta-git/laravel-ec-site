@@ -17,11 +17,21 @@ class ProductController extends Controller
   /**
    * Display a listing of the resource.
    */
-  public function index()
+  public function index(Request $request)
   {
-    $products = Product::with(['mainImage'])->orderByDesc('updated_at')->paginate(15);
+    $categories = Category::getOrderedCategories();
 
-    return view('products.index', compact('products'));
+    // 検索条件を取得
+    $search = $request->input('search');
+    $categoryId = $request->input('category_id');
+
+    // 検索実行（カテゴリと商品名の両方で絞り込み）
+    $products = Product::search($search, $categoryId)
+      ->with(['mainImage'])
+      ->orderByDesc('updated_at')
+      ->paginate(15);
+
+    return view('products.index', compact('products', 'categories', 'categoryId', 'search'));
   }
 
   /**
@@ -110,7 +120,7 @@ class ProductController extends Controller
     DB::beginTransaction();
 
     $product = Product::where('uuid', $uuid)->firstOrFail();
-    
+
     try {
 
       // 商品情報を更新（画像以外）
@@ -168,10 +178,10 @@ class ProductController extends Controller
       $product->delete();
 
       DB::commit();
-      
+
       // わざとエラーを起こす
       // throw new \Exception('テスト用のエラーです');
-      
+
       //ここで落ちても最悪物理ファイルが残るだけなので運用で回避してもらう  
       foreach ($imagePaths as $path) {
         Storage::disk('public')->delete($path);

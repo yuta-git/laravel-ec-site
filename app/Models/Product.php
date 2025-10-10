@@ -20,17 +20,17 @@ class Product extends Model
     'category_id',
   ];
 
-      // UUIDを自動生成
-    protected static function boot()
-    {
-        parent::boot();
-        
-        static::creating(function ($model) {
-            if (empty($model->uuid)) {
-                $model->uuid = Str::uuid()->toString();
-            }
-        });
-    }
+  // UUIDを自動生成
+  protected static function boot()
+  {
+    parent::boot();
+
+    static::creating(function ($model) {
+      if (empty($model->uuid)) {
+        $model->uuid = Str::uuid()->toString();
+      }
+    });
+  }
 
   public function category()
   {
@@ -41,19 +41,58 @@ class Product extends Model
   {
     return $this->hasMany(ProductImage::class);
   }
- 
-  
-  public function mainImage() {
-    return $this->hasOne(ProductImage::class, 'product_id')->where('image_type', 0);   
+
+
+  public function mainImage()
+  {
+    return $this->hasOne(ProductImage::class, 'product_id')->where('image_type', 0);
   }
 
-  public function subImage1(){
+  public function subImage1()
+  {
     return $this->hasOne(ProductImage::class, 'product_id')->where('image_type', 1);
   }
 
 
-  public function subImage2(){
+  public function subImage2()
+  {
     return $this->hasOne(ProductImage::class, 'product_id')->where('image_type', 2);
   }
-  
+
+
+  /**
+   * 商品名とカテゴリで絞り込むスコープ
+   */
+  public function scopeSearch($query, $search, $categoryId = null)
+  {
+    
+    // カテゴリが選択されている場合（"すべて"以外）
+    if (!empty($categoryId)) {
+      $query->where('category_id', $categoryId);
+    }
+
+    // 検索キーワードが入力されている場合
+    if (!empty($search)) {
+      $converted = $this->convertFullToHalfWidth($search);
+      foreach ($this->splitSpaceToArray($converted) as $value) {
+        $query->where('name', 'like', '%' . $value . '%');
+      }
+    }
+
+    // dd($query);
+
+    return $query;
+  }
+
+  // 全角→半角変換（既存メソッド）
+  private function convertFullToHalfWidth($string)
+  {
+    return mb_convert_kana($string, 'as');
+  }
+
+  // スペース区切りで配列化（既存メソッド）
+  private function splitSpaceToArray($string)
+  {
+    return preg_split('/[\s]+/', $string, -1, PREG_SPLIT_NO_EMPTY);
+  }
 }
