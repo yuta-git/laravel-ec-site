@@ -3,9 +3,11 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CategoryController;
 
 
 Route::middleware(['auth', 'verified'])->group(function () {
+
   // ダッシュボード(管理者用)
   Route::get('/admin/dashboard', function () {
     return view('dashboard');
@@ -29,6 +31,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
             });
         });
     });
+
+  // カテゴリ(管理者用)
+  Route::prefix('admin/categories')
+    ->group(function () {
+      Route::controller(CategoryController::class)
+        ->name('categories.')
+        ->group(function () {
+          Route::get('/', 'index')->name('index');
+        });
+    });
+    
 });
 
 

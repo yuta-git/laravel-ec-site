@@ -184,5 +184,6 @@ return [
     'time' => '時間',
     'available' => '利用可能',
     'size' => 'サイズ',
+    'sort_order' => 'ソート順',
   ],
 ];
