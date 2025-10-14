@@ -23,7 +23,7 @@ return new class extends Migration
 
       $table->char('uuid', 36)->unique();
       $table->string('name', 255);
-      $table->text('description');
+      $table->text('description')->nullable();
       $table->mediumInteger('price')->unsigned();
       $table->smallInteger('stock')->unsigned();
 
