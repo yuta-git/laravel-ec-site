@@ -8,40 +8,40 @@ use App\Http\Controllers\CategoryController;
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
-  // ダッシュボード(管理者用)
-  Route::get('/admin/dashboard', function () {
-    return view('dashboard');
-  })->name('dashboard');
+  Route::prefix('admin')->group(function () {
 
-  // 商品(管理者用)
-  Route::prefix('admin/products')
-    ->group(function () {
-      Route::controller(ProductController::class)
-        ->name('products.')
-        ->group(function () {
-          Route::get('/', 'index')->name('index');
-          Route::get('/create', 'create')->name('create');
-          Route::post('/', 'store')->name('store');
-          Route::prefix('/{uuid}')
-            ->group(function () {
-              Route::get('', 'show')->name('show');
-              Route::get('/edit', 'edit')->name('edit');
-              Route::put('', 'update')->name('update');
-              Route::delete('', 'destroy')->name('destroy');
-            });
-        });
-    });
+    // ダッシュボード(管理者用)
+    Route::get('dashboard', function () {
+      return view('dashboard');
+    })->name('dashboard');
 
-  // カテゴリ(管理者用)
-  Route::prefix('admin/categories')
-    ->group(function () {
-      Route::controller(CategoryController::class)
-        ->name('categories.')
-        ->group(function () {
-          Route::get('/', 'index')->name('index');
-        });
-    });
-    
+    // 商品(管理者用)
+    Route::prefix('products')
+      ->group(function () {
+        Route::controller(ProductController::class)
+          ->name('products.')
+          ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::prefix('/{uuid}')
+              ->group(function () {
+                Route::get('', 'show')->name('show');
+                Route::get('/edit', 'edit')->name('edit');
+                Route::put('', 'update')->name('update');
+                Route::delete('', 'destroy')->name('destroy');
+              });
+          });
+      });
+
+    // カテゴリ(管理者用)
+    Route::prefix('categories')
+      ->controller(CategoryController::class)
+      ->name('categories.')
+      ->group(function () {
+        Route::get('/', 'index')->name('index');
+      });
+  });
 });
 
 

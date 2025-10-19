@@ -60,12 +60,11 @@ class Product extends Model
   }
 
 
-  /**
-   * 商品名とカテゴリで絞り込むスコープ
-   */
+  /*******
+   商品名とカテゴリで絞り込むスコープ
+  ********/
   public function scopeSearch($query, $search, $categoryId = null)
   {
-    
     // カテゴリが選択されている場合（"すべて"以外）
     if (!empty($categoryId)) {
       $query->where('category_id', $categoryId);
@@ -73,26 +72,39 @@ class Product extends Model
 
     // 検索キーワードが入力されている場合
     if (!empty($search)) {
-      $converted = $this->convertFullToHalfWidth($search);
-      foreach ($this->splitSpaceToArray($converted) as $value) {
-        $query->where('name', 'like', '%' . $value . '%');
+
+      foreach ($this->splitSpaceToArray($search) as $value) {
+        // ワイルドカード文字をエスケープ
+        $escapedValue = $this->escapeLikeWildcards($value);
+        $query->where('name', 'like', '%' . $escapedValue . '%');
       }
     }
-
-    // dd($query);
-
     return $query;
   }
 
-  // 全角→半角変換（既存メソッド）
-  private function convertFullToHalfWidth($string)
-  {
-    return mb_convert_kana($string, 'as');
-  }
-
-  // スペース区切りで配列化（既存メソッド）
+  // スペース区切りで配列化
   private function splitSpaceToArray($string)
   {
-    return preg_split('/[\s]+/', $string, -1, PREG_SPLIT_NO_EMPTY);
+    $input = str_replace('　', ' ', $string); // 全角スペースを半角に統一
+    $input = trim($input);
+    
+    $splited = preg_split('/[\s]+/', $input, -1, PREG_SPLIT_NO_EMPTY);
+
+    return collect($splited)
+      ->filter(fn($v) => mb_strlen($v) <= 20) // 20文字以下に制限
+      ->unique()
+      ->take(10)
+      ->values() // インデックスを0から振り直し
+      ->all(); // コレクションを配列に変換
+  }
+
+  // LIKE検索用のワイルドカード文字をエスケープする
+  private function escapeLikeWildcards($value)
+  {
+    $value = str_replace('\\', '\\\\', $value);  // バックスラッシュをエスケープ
+    $value = str_replace('%',  '\%',  $value);
+    $value = str_replace('_',  '\_',  $value);
+
+    return $value;
   }
 }
