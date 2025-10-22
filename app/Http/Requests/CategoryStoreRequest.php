@@ -23,7 +23,7 @@ class CategoryStoreRequest extends FormRequest
   {
     return [
       'name' => 'required|string|max:255',
-      'sort_order' => 'required|integer|min:0',
+      'sortOrder' => 'required|integer|min:0',
     ];
   }
 

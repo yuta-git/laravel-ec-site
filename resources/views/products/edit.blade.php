@@ -21,12 +21,13 @@
           <section class="text-gray-600 body-font overflow-hidden">
             <!-- 戻るボタン -->
             <div class="flex mb-4 justify-start w-full">
-              <a href="{{ route('products.show', $product->uuid) }}"
+              <a href="{{ route('admin.products.show', $product->uuid) }}"
                 class="flex text-white bg-gray-500 border-0 py-2 px-6 focus:outline-none hover:bg-gray-600 rounded">
                 戻る</a>
             </div>
             <div class="container px-5 py-24 mx-auto">
-              <form action="{{ route('products.update', $product->uuid) }}" method="POST" enctype="multipart/form-data">
+              <form action="{{ route('admin.products.update', $product->uuid) }}" method="POST"
+                enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 <div class="lg:w-[95%] mx-auto flex flex-wrap">

@@ -8,7 +8,7 @@ use App\Http\Controllers\CategoryController;
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
-  Route::prefix('admin')->group(function () {
+  Route::prefix('admin')->name('admin.')->group(function () {
 
     // ダッシュボード(管理者用)
     Route::get('dashboard', function () {

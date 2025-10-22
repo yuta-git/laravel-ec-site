@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\Category;
+use App\Http\Requests\CategoryStoreRequest;
 
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Validator;
@@ -23,44 +24,37 @@ class CategoryTable extends Component
 
   public string $name = '';
 
-  public ?int $sortOrder = null;
+  public ?int $sortOrder = 0;
 
   // 各カテゴリごとの編集中の値を保持
   public array $editingCategories = [];
 
 
-  // === バリデーション ===
+// === バリデーション ===
   public function rules()
   {
-    return [
-      'name' => 'required|string|max:255',
-      'sortOrder' => 'required|integer|min:0',
-    ];
+    return (new CategoryStoreRequest())->rules();
+  }
+  public function messages()
+  {
+    return (new CategoryStoreRequest())->messages();
   }
 
   public function validationAttributes()
   {
-    return [
-      'name' => 'カテゴリ名',
-      'sortOrder' => 'ソート順',
-    ];
+    return (new CategoryStoreRequest())->attributes();
   }
 
 
   public function updateField($categoryId, $field, $value)
   {
-
-    $category = Category::find($categoryId);
-
-    // URLパラメータ改ざんや削除済みデータへのアクセスなど、存在しないIDが渡される可能性があるため
-    if (!$category) {
-      return;
-    }
+    // 存在しないデータへの不正アクセスは404エラーとして返す
+    $category = Category::findOrFail($categoryId);
 
     // ★★★ 初回アクセス時に updated_at を記録 ★★★
     if (!isset($this->editingCategories[$categoryId])) {
       $this->editingCategories[$categoryId] = [
-        'original_updated_at' => $category->updated_at->format('Y-m-d H:i:s'),
+        'original_updated_at' => $category->updated_at->toJSON(),
       ];
     }
 
@@ -70,18 +64,11 @@ class CategoryTable extends Component
     if ($field === 'name') {
       $value = trim($value);
     }
-    if ($field === 'sort_order') {
-      $value = ($value === '' || $value === null) ? null : (int)$value;
-    }
 
     // バリデーション用の値を取得
     $nameValue = $this->editingCategories[$categoryId]['name'] ?? $category->name;
     $sortOrderValue = $this->editingCategories[$categoryId]['sort_order'] ?? $category->sort_order;
-
-    // 前処理
-    if (isset($sortOrderValue)) {
-      $sortOrderValue = ($sortOrderValue === '' || $sortOrderValue === null) ? null : (int)$sortOrderValue;
-    }
+    
 
     // バリデーション
     $validator = Validator::make([
@@ -102,7 +89,7 @@ class CategoryTable extends Component
     $category->refresh();
     $savedOriginalUpdatedAt = $this->editingCategories[$categoryId]['original_updated_at'];
 
-    if ($category->updated_at->format('Y-m-d H:i:s') !== $savedOriginalUpdatedAt) {
+    if ($category->updated_at->toJSON() !== $savedOriginalUpdatedAt) {
       $this->addError("category.{$categoryId}.conflict", '他のユーザーによって更新されています。画面を再読み込みしてください。');
       unset($this->editingCategories[$categoryId]);
       return;

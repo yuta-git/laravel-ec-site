@@ -7,9 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Support\Str;
 
+use App\Traits\SearchableTrait;
+
 class Product extends Model
 {
   use HasFactory;
+  use SearchableTrait;
 
   protected $fillable = [
     'uuid',
@@ -41,7 +44,6 @@ class Product extends Model
   {
     return $this->hasMany(ProductImage::class);
   }
-
 
   public function mainImage()
   {
@@ -82,29 +84,5 @@ class Product extends Model
     return $query;
   }
 
-  // スペース区切りで配列化
-  private function splitSpaceToArray($string)
-  {
-    $input = str_replace('　', ' ', $string); // 全角スペースを半角に統一
-    $input = trim($input);
-    
-    $splited = preg_split('/[\s]+/', $input, -1, PREG_SPLIT_NO_EMPTY);
-
-    return collect($splited)
-      ->filter(fn($v) => mb_strlen($v) <= 20) // 20文字以下に制限
-      ->unique()
-      ->take(10)
-      ->values() // インデックスを0から振り直し
-      ->all(); // コレクションを配列に変換
-  }
-
-  // LIKE検索用のワイルドカード文字をエスケープする
-  private function escapeLikeWildcards($value)
-  {
-    $value = str_replace('\\', '\\\\', $value);  // バックスラッシュをエスケープ
-    $value = str_replace('%',  '\%',  $value);
-    $value = str_replace('_',  '\_',  $value);
-
-    return $value;
-  }
+  
 }
