@@ -29,7 +29,7 @@
           <section class="text-gray-600 body-font overflow-hidden">
             <!-- 戻るボタン -->
             <div class="flex mb-4 justify-start w-full">
-              <a href="{{ route('products.index') }}"
+              <a href="{{ route('admin.products.index') }}"
                 class="flex text-white bg-gray-500 border-0 py-2 px-6 focus:outline-none hover:bg-gray-600 rounded">
                 戻る</a>
             </div>
@@ -74,13 +74,13 @@
                   </div>
                   <!-- 編集ボタン -->
                   <div class="flex mt-8 justify-end gap-3">
-                    <a href="{{ route('products.edit', [ 'uuid' => $product->uuid ]) }}"
+                    <a href="{{ route('admin.products.edit', [ 'uuid' => $product->uuid ]) }}"
                       class="flex text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">
                       編集</a>
                   </div>
                   <!-- 削除ボタン -->
                   <div class="flex mt-12 justify-end w-full">
-                    <form action="{{ route('products.destroy', $product->uuid) }}" method="POST"
+                    <form action="{{ route('admin.products.destroy', $product->uuid) }}" method="POST"
                       onsubmit="return confirm('この商品を削除しますか？削除すると元に戻せません。')">
                       @csrf
                       @method('DELETE')

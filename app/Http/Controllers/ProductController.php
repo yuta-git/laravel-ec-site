@@ -83,7 +83,7 @@ class ProductController extends Controller
 
       DB::commit();
 
-      return redirect()->route('products.index')
+      return redirect()->route('admin.products.index')
         ->with('success', '商品を登録しました');
     } catch (\Exception $e) {
       DB::rollBack();
@@ -143,7 +143,7 @@ class ProductController extends Controller
 
       DB::commit();
 
-      return redirect()->route('products.show', $product->uuid)
+      return redirect()->route('admin.products.show', $product->uuid)
         ->with('success', '商品を更新しました');
     } catch (\Exception $e) {
       DB::rollBack();
@@ -187,7 +187,7 @@ class ProductController extends Controller
         Storage::disk('public')->delete($path);
       }
 
-      return redirect()->route('products.index')
+      return redirect()->route('admin.products.index')
         ->with('success', '商品を削除しました');
     } catch (\Exception $e) {
       DB::rollBack();

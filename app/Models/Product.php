@@ -7,9 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Support\Str;
 
+use App\Traits\SearchableTrait;
+
 class Product extends Model
 {
   use HasFactory;
+  use SearchableTrait;
 
   protected $fillable = [
     'uuid',
@@ -42,7 +45,6 @@ class Product extends Model
     return $this->hasMany(ProductImage::class);
   }
 
-
   public function mainImage()
   {
     return $this->hasOne(ProductImage::class, 'product_id')->where('image_type', 0);
@@ -60,12 +62,11 @@ class Product extends Model
   }
 
 
-  /**
-   * 商品名とカテゴリで絞り込むスコープ
-   */
+  /*******
+   商品名とカテゴリで絞り込むスコープ
+  ********/
   public function scopeSearch($query, $search, $categoryId = null)
   {
-    
     // カテゴリが選択されている場合（"すべて"以外）
     if (!empty($categoryId)) {
       $query->where('category_id', $categoryId);
@@ -73,26 +74,15 @@ class Product extends Model
 
     // 検索キーワードが入力されている場合
     if (!empty($search)) {
-      $converted = $this->convertFullToHalfWidth($search);
-      foreach ($this->splitSpaceToArray($converted) as $value) {
-        $query->where('name', 'like', '%' . $value . '%');
+
+      foreach ($this->splitSpaceToArray($search) as $value) {
+        // ワイルドカード文字をエスケープ
+        $escapedValue = $this->escapeLikeWildcards($value);
+        $query->where('name', 'like', '%' . $escapedValue . '%');
       }
     }
-
-    // dd($query);
-
     return $query;
   }
 
-  // 全角→半角変換（既存メソッド）
-  private function convertFullToHalfWidth($string)
-  {
-    return mb_convert_kana($string, 'as');
-  }
-
-  // スペース区切りで配列化（既存メソッド）
-  private function splitSpaceToArray($string)
-  {
-    return preg_split('/[\s]+/', $string, -1, PREG_SPLIT_NO_EMPTY);
-  }
+  
 }

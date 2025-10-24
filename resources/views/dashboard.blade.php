@@ -14,7 +14,7 @@
           <div class="container px-5 py-24 mx-auto">
             <div class="flex flex-wrap -m-2">
 
-              <a href="{{ route('products.index') }}" class="p-2 lg:w-1/3 md:w-1/2 w-full">
+              <a href="{{ route('admin.products.index') }}" class="p-2 lg:w-1/3 md:w-1/2 w-full">
                 <div
                   class="h-full flex items-center border-gray-200 border p-4 rounded-lg hover:bg-gray-100 hover:shadow-md transition-all duration-300">
                   <div class="flex-grow">
@@ -23,7 +23,7 @@
                 </div>
               </a>
 
-              <a href="{{ route('categories.index') }}" class="p-2 lg:w-1/3 md:w-1/2 w-full">
+              <a href="{{ route('admin.categories.index') }}" class="p-2 lg:w-1/3 md:w-1/2 w-full">
                 <div
                   class="h-full flex items-center border-gray-200 border p-4 rounded-lg hover:bg-gray-100 hover:shadow-md transition-all duration-300">
                   <div class="flex-grow">

@@ -22,13 +22,8 @@ class CategoryStoreRequest extends FormRequest
   public function rules(): array
   {
     return [
-      // 新規作成用
       'name' => 'required|string|max:255',
-      'sort_order' => 'required|integer|min:0',
-
-      // 既存カテゴリの更新用
-      'categories.*.name' => 'required|string|max:255',
-      'categories.*.sort_order' => 'required|integer|min:0',
+      'sortOrder' => 'required|integer|min:0',
     ];
   }
 
@@ -46,8 +41,6 @@ class CategoryStoreRequest extends FormRequest
   public function attributes(): array
   {
     return [
-      'categories.*.name' => 'カテゴリ名',
-      'categories.*.sort_order' => 'ソート順',
     ];
   }
 }

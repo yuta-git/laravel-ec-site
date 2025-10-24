@@ -1,4 +1,4 @@
-<div>
+<div class="p-6">
   <!-- トースト通知 -->
   @if($showToast)
   <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => { show = false; $wire.hideToast(); }, 3000)"
@@ -21,7 +21,7 @@
             作成</button>
         </div>
 
-        <table class="table-auto w-full text-left whitespace-no-wrap">
+        <table class="table-auto w-full text-left whitespace-nowrap">
           <thead>
             <tr>
               <th
@@ -45,14 +45,15 @@
                 <input type="text" wire:model="name" placeholder=""
                   class="w-full border-gray-300 rounded focus:border-blue-500 focus:ring focus:ring-blue-200">
                 @error('name')
-                <span class="text-red-500 text-xs">{{ $message }}</span>
+                <span class="block text-red-500 text-xs">{{ $message }}</span>
                 @enderror
               </td>
               <td class="px-4 py-3 text-center">
-                <input type="number" wire:model="sort_order" placeholder=""
+                <input type="number" wire:model.number.defer="sortOrder" min="0" step="1" inputmode="numeric"
+                  placeholder=""
                   class="w-full border-gray-300 rounded text-center focus:border-blue-500 focus:ring focus:ring-blue-200">
-                @error('sort_order')
-                <span class="text-red-500 text-xs">{{ $message }}</span>
+                @error('sortOrder')
+                <span class="block text-red-500 text-xs">{{ $message }}</span>
                 @enderror
               </td>
               <td class="px-4 py-3 text-center">
@@ -73,33 +74,52 @@
             @endif
 
             <!-- 作成済のカテゴリ一覧 -->
-            @foreach($categories as $id => $category)
-            <tr wire:key="category-{{ $id }}">
+            @forelse($categories as $category)
+            <tr wire:key="category-{{ $category->id }}">
               <td class="px-4 py-3">
-                <input type="text" wire:model.live.debounce.2000ms="categories.{{ $id }}.name"
-                  class="w-full border-gray-300 rounded focus:border-blue-500 focus:ring focus:ring-blue-200">
-                @error('categories.' . $id . '.name')
-                <span class="text-red-500 text-xs">{{ $message }}</span>
-                @enderror
+                <div>
+                  <input type="text" value="{{ $editingCategories[$category->id]['name'] ?? $category->name }}"
+                    wire:change="updateField({{ $category->id }}, 'name', $event.target.value)"
+                    class=" w-full border-gray-300 rounded focus:border-blue-500 focus:ring focus:ring-blue-200">
+                  @error('category.' . $category->id . '.name')
+                  <span class="block text-red-500 text-xs">{{ $message }}</span>
+                  @enderror
+                </div>
               </td>
               <td class="px-4 py-3 text-center">
-                <input type="number" wire:model.live.debounce.2000ms="categories.{{ $id }}.sort_order"
-                  class="w-full border-gray-300 rounded text-center focus:border-blue-500 focus:ring focus:ring-blue-200">
-                @error('categories.' . $id . '.sort_order')
-                <span class="text-red-500 text-xs">{{ $message }}</span>
-                @enderror
+                <div>
+                  <input type="number"
+                    value="{{ $editingCategories[$category->id]['sort_order'] ?? $category->sort_order }}"
+                    wire:change="updateField({{ $category->id }}, 'sort_order', $event.target.value)" min="0" step="1"
+                    inputmode="numeric" class="w-full border-gray-300 rounded text-center focus:border-blue-500
+                  focus:ring focus:ring-blue-200">
+                  @error('category.' . $category->id . '.sortOrder')
+                  <span class="block text-red-500 text-xs">{{ $message }}</span>
+                  @enderror
+                  <!-- 楽観ロックのエラー -->
+                  @error('category.' . $category->id . '.conflict')
+                  <span class="block text-red-500 text-xs">{{ $message }}</span>
+                  @enderror
+                </div>
               </td>
               <td class="px-4 py-3 text-center">
-                <button wire:click="deleteCategory({{ $id }})"
+                <button x-on:click.prevent="if(confirm('削除しますか?')) $wire.deleteCategory('{{ $category->id }}')"
+                  wire:loading.attr="disabled" wire:target="deleteCategory"
+                  wire:loading.class="opacity-50 pointer-events-none"
                   class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
                   削除
                 </button>
               </td>
             </tr>
-            @endforeach
+            @empty
+            <tr>
+              <td colspan="3" class="text-center text-gray-500">カテゴリはありません</td>
+            </tr>
+            @endforelse
           </tbody>
         </table>
       </div>
     </div>
+    {{ $categories->links() }}
   </section>
 </div>

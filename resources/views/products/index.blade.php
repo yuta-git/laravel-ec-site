@@ -19,7 +19,7 @@
         <div class="p-6 text-gray-900">
 
           <!-- 検索フォーム -->
-          <form method="get" action="{{route('products.index')}}">
+          <form method="get" action="{{route('admin.products.index')}}">
             <div class="flex mb-4 justify-center items-center w-2/3 gap-1 mx-auto">
               <select id="category_id" name="category_id"
                 class="pr-7 text-sm border border-gray-300 rounded pl-2 py-2 focus:outline-none focus:ring-2"
@@ -43,7 +43,7 @@
             <div class="container px-5 py-24 mx-auto">
               <!-- 作成ボタン -->
               <div class="flex mb-8 justify-start w-full">
-                <a href="{{ route('products.create') }}"
+                <a href="{{ route('admin.products.create') }}"
                   class="flex text-white bg-green-500 border-0 py-2 px-6 focus:outline-none hover:bg-green-600 rounded">
                   作成</a>
               </div>
@@ -64,7 +64,7 @@
                       </p>
                       <div class="flex items-center flex-wrap ">
                         <a class="text-indigo-500 inline-flex items-center md:mb-2 lg:mb-0"
-                          href="{{ route('products.show', [ 'uuid' => $product->uuid ]) }}"> 詳細
+                          href="{{ route('admin.products.show', [ 'uuid' => $product->uuid ]) }}"> 詳細
                           <svg class="w-4 h-4 ml-2" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
                             fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M5 12h14"></path>
@@ -78,8 +78,8 @@
                 @endforeach
               </div>
             </div>
-            {{ $products->links() }}
           </section>
+          {{ $products->links() }}
 
         </div>
       </div>
