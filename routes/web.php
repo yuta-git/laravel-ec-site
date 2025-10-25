@@ -24,6 +24,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/create', 'create')->name('create');
             Route::post('/', 'store')->name('store');
+
+            // CSV インポート用ルート
+            Route::post('/import', 'import')->name('import');
+
             Route::prefix('/{uuid}')
               ->group(function () {
                 Route::get('', 'show')->name('show');
@@ -41,6 +45,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
       ->group(function () {
         Route::get('/', 'index')->name('index');
       });
+      
   });
 });
 

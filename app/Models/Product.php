@@ -64,7 +64,7 @@ class Product extends Model
 
   /*******
    商品名とカテゴリで絞り込むスコープ
-  ********/
+   ********/
   public function scopeSearch($query, $search, $categoryId = null)
   {
     // カテゴリが選択されている場合（"すべて"以外）
@@ -84,5 +84,5 @@ class Product extends Model
     return $query;
   }
 
-  
+
 }

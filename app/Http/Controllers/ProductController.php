@@ -10,6 +10,7 @@ use App\Http\Requests\ProductStoreRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 
 class ProductController extends Controller
@@ -200,6 +201,113 @@ class ProductController extends Controller
 
       return redirect()->back()
         ->with('error', '商品の削除に失敗しました');
+    }
+  }
+
+
+    /**
+   * CSV インポート機能
+   */
+  public function import(Request $request)
+  {
+    // CSVファイル自体のバリデーション
+    $request->validate([
+      'csv_file' => 'required|file|mimes:csv,txt|max:2048'
+    ]);
+
+    try {
+      DB::beginTransaction();
+
+      $file = $request->file('csv_file');
+
+      // ファイルが空でないかチェック
+      if ($file->getSize() == 0) {
+        throw new \Exception('CSVファイルが空です');
+      }
+
+      // CSV読み込み処理...
+      $csvData = file_get_contents($file->getRealPath());
+
+      // UTF-8に変換。Laravelは基本的にUTF-8で動作するため、文字化けを防ぐため。
+      if (mb_detect_encoding($csvData, 'UTF-8, SJIS, SJIS-win', true) !== 'UTF-8') {
+        $csvData = mb_convert_encoding($csvData, 'UTF-8', 'SJIS-win');
+      }
+
+      //  UTF-8 BOM(Byte Order Mark)を削除。BOMがあると1列目のヘッダー名が正しく認識されない可能性がある。
+      $csvData = str_replace("\xEF\xBB\xBF", '', $csvData);
+
+      // 配列の中に各行を配列する
+      $rows = array_map('str_getcsv', explode("\n", $csvData));
+
+      // array_shift(): 配列の先頭要素を取り出して削除。$rowsにはデータ行のみが残る。
+      $header = array_shift($rows);
+
+      $importCount = 0;
+      $errorMessages = [];
+
+      
+      foreach ($rows as $index => $row) {
+        
+        // 空行スキップ。array_filter($row): 空でない要素のみ残す
+        if (empty(array_filter($row))) {
+          continue;
+        }
+
+        // ヘッダーとデータのカラム数が一致するか確認
+        if (count($row) != count($header)) {
+          $errorMessages[] = ($index + 2) . '行目: カラム数が一致しません';
+          continue;
+        }
+
+        // ヘッダー名をキーにした連想配列に変換。$data = ['name' => '商品A','price' => '1000','stock' => '50']
+        $data = array_combine($header, $row);
+        $rowNumber = $index + 2;
+
+        // 各行のバリデーション
+        $validator = Validator::make($data, [
+          'name' => 'required|string|max:255',
+          'description' => 'nullable|string|max:2000',
+          'price' => 'required|integer|min:0|max:99999999',
+          'stock' => 'required|integer|min:0|max:999999',
+          'category_id' => 'required|exists:categories,id',
+        ]);
+
+        if ($validator->fails()) {
+          foreach ($validator->errors()->all() as $error) {
+            $errorMessages[] = "{$rowNumber}行目: {$error}";
+          }
+          continue;
+        }
+
+        try {
+          Product::create($data);
+          $importCount++;
+        } catch (\Exception $e) {
+          $errorMessages[] = "{$rowNumber}行目: " . $e->getMessage();
+        }
+      }
+
+      if (!empty($errorMessages)) {
+        DB::rollBack();
+        return redirect()->route('admin.products.index')
+          ->with('error', 'CSVのインポート中にエラーが発生しました:<br>' . implode('<br>', $errorMessages));
+      }
+
+      if ($importCount == 0) {
+        DB::rollBack();
+        return redirect()->route('admin.products.index')
+          ->with('error', 'インポート可能なデータがありませんでした');
+      }
+
+      DB::commit();
+
+      return redirect()->route('admin.products.index')
+        ->with('success', "{$importCount}件の商品をインポートしました");
+    } catch (\Exception $e) {
+      DB::rollBack();
+      Log::error('CSV Import Error: ' . $e->getMessage());
+      return redirect()->route('admin.products.index')
+        ->with('error', 'CSVのインポートに失敗しました: ' . $e->getMessage());
     }
   }
 }

@@ -1,14 +1,35 @@
 <x-app-layout>
   <x-slot name="header">
-    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-      商品一覧
-    </h2>
+    <div class="flex justify-between items-center">
+      <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        商品一覧
+      </h2>
+      <!-- CSV インポートフォーム-->
+      <form action="{{ route('admin.products.import') }}" method="POST" enctype="multipart/form-data" id="importForm">
+        @csrf
+        <input type="file" name="csv_file" id="csv_file" accept=".csv" style="display: none;"
+          onchange="this.form.submit()">
+        <button type="button" onclick="document.getElementById('csv_file').click()"
+          class="text-white bg-green-500 border-0 py-2 px-6 focus:outline-none hover:bg-green-600 rounded">
+          インポート
+        </button>
+      </form>
+
+    </div>
   </x-slot>
 
   @if (session('success'))
   <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pt-4">
     <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
       <span class="block sm:inline">{{ session('success') }}</span>
+    </div>
+  </div>
+  @endif
+
+  @if (session('error'))
+  <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pt-4">
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+      <span class="block sm:inline">{{ session('error') }}</span>
     </div>
   </div>
   @endif

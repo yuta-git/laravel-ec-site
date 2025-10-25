@@ -32,14 +32,6 @@
                 </div>
               </a>
 
-              <a href="#" class="p-2 lg:w-1/3 md:w-1/2 w-full">
-                <div
-                  class="h-full flex items-center border-gray-200 border p-4 rounded-lg hover:bg-gray-100 hover:shadow-md transition-all duration-300">
-                  <div class="flex-grow">
-                    <p class="text-gray-900 title-font font-medium">CSV取込</p>
-                  </div>
-                </div>
-              </a>
 
             </div>
           </div>
