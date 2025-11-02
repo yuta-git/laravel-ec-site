@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ImportController;
 
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -45,7 +46,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
       ->group(function () {
         Route::get('/', 'index')->name('index');
       });
-      
+
+    // CSVインポートの進捗確認API用ルート
+    Route::get('/imports/{import}/progress', [ImportController::class, 'progress'])
+      ->name('imports.progress');
   });
 });
 
