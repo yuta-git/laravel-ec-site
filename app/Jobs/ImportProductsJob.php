@@ -23,6 +23,8 @@ class ImportProductsJob implements ShouldQueue
   public $importId;
   public $filePath;
 
+  public int $tries = 3;
+  public int $timeout = 120;
 
   /**
    * Create a new job instance.
@@ -68,39 +70,65 @@ class ImportProductsJob implements ShouldQueue
         $csv->appendStreamFilterOnRead('convert.iconv.SJIS-win/UTF-8');
       }
 
-
       $importCount = 0;
       $errorMessages = [];
       $insertData = [];
 
-      // SplFileObjectで行数だけカウント（メモリ節約）
-      $file = new \SplFileObject($fullPath);
-      $file->seek(PHP_INT_MAX);
-      $total = $file->key();
+      // 第1ループ: 全レコード読み込みとcategory_id収集
+      $allRows = [];
+      $catSet = [];
 
-      // ヘッダーをキーにした連想配列をループで回す
-      foreach ($csv->getRecords() as $index => $row) {
+      foreach ($csv->getRecords() as $i => $row) {
         // 空行スキップ。array_filter($row): 空でない要素のみ残す
         if (empty(array_filter($row))) {
           continue;
         }
+        // キーを小文字化、値をトリム
+        $row = array_change_key_case(array_map('trim', $row), CASE_LOWER);
+        $allRows[] = $row;
+
+        // カテゴリIDをキーにすることで重複が除かれる
+        if (isset($row['category_id']) && $row['category_id'] !== '') {
+          $catSet[(int)$row['category_id']] = true;
+        }
+      }
+
+      // 総行数（ゼロ除算対策）
+      $total = max(1, count($allRows));
+
+      // DBから有効なカテゴリIDを一括取得
+      $validCatIds = \App\Models\Category::query()
+        ->whereIn('id', array_keys($catSet))
+        ->pluck('id')->all();
+
+      // キーと値を入れ替える。キーをカテゴリIDにする。キーのほうが値での検索よりもパフォーマンスが良いため。
+      $validCat = array_flip($validCatIds);
+
+      // 第2ループ: バリデーションと登録処理
+      foreach ($allRows as $idx => $row) {
 
         // CSVファイル上の実際の行番号(ヘッダー=1行目、データ開始=2行目)
-        $rowNumber = $index + 2;
+        $rowNumber = $idx + 2;
 
-        // 各行のバリデーション
+        // 各行のバリデーション（existsは除外）
         $validator = Validator::make($row, [
           'name' => 'required|string|max:255',
           'description' => 'nullable|string|max:2000',
           'price' => 'required|integer|min:0|max:99999999',
           'stock' => 'required|integer|min:0|max:999999',
-          'category_id' => 'required|exists:categories,id',
+          'category_id' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
           foreach ($validator->errors()->all() as $error) {
             $errorMessages[] = "{$rowNumber}行目: {$error}";
           }
+          continue;
+        }
+
+        // カテゴリIDの存在チェック（メモリ上で実施）
+        if (!isset($validCat[(int)$row['category_id']])) {
+          $errorMessages[] = "{$rowNumber}行目: category_idが存在しません";
           continue;
         }
 
@@ -112,9 +140,9 @@ class ImportProductsJob implements ShouldQueue
         ]);
         $importCount++;
 
-        // 進捗更新（10行ごとなど、適度な間隔で更新）
-        if ($index % 10 === 0 || $index === $total - 1) {
-          $import->update(['progress' => floor(($index + 1) / $total * 100)]);
+        // 進捗更新（10行ごと）
+        if ($idx % 10 === 0 || $idx === $total - 1) {
+          $import->update(['progress' => floor(($idx + 1) / $total * 100)]);
         }
       }
 
@@ -129,19 +157,13 @@ class ImportProductsJob implements ShouldQueue
         return;
       }
 
-      // データ挿入
+      // チャンク分割して挿入
       if (!empty($insertData)) {
-        try {
-          Product::insert($insertData);
-        } catch (\Exception $e) {
-          DB::rollBack();
-          Log::error('Bulk Insert Error: ' . $e->getMessage());
-          $import->update([
-            'status' => 'failed',
-            'error_message' => 'データベース挿入に失敗しました: ' . $e->getMessage()
-          ]);
-          return;
-        }
+        DB::transaction(function () use (&$insertData) { // トランザクション開始
+          foreach (array_chunk($insertData, 1000) as $chunk) { // 1000件ずつ分割
+            Product::insert($chunk); // 1000件ずつ挿入
+          }
+        }); // トランザクション終了（自動COMMIT）
       }
 
       // インポート件数が0の場合
@@ -164,7 +186,7 @@ class ImportProductsJob implements ShouldQueue
       ]);
 
       Log::info("CSV Import completed: {$importCount} products imported");
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
       DB::rollBack();
       Log::error('CSV Import Job Error: ' . $e->getMessage());
 
@@ -175,6 +197,7 @@ class ImportProductsJob implements ShouldQueue
           'error_message' => $e->getMessage()
         ]);
       }
+      throw $e;
     }
   }
 }
