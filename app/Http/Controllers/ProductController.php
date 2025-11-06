@@ -6,11 +6,18 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Category;
+
 use App\Http\Requests\ProductStoreRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
+use App\Models\Import;
+use App\Jobs\ImportProductsJob;
+
+// CSVライブラリ読み込み https://csv.thephpleague.com/
+use League\Csv\Reader;
 
 class ProductController extends Controller
 {
@@ -200,6 +207,52 @@ class ProductController extends Controller
 
       return redirect()->back()
         ->with('error', '商品の削除に失敗しました');
+    }
+  }
+
+
+  /*******
+   CSV インポート機能
+   *******/
+  public function import(Request $request)
+  {
+    // CSVファイル自体のバリデーション
+    $request->validate([
+      'csv_file' => 'required|file|mimes:csv,txt|extensions:csv,txt|max:2048'
+    ]);
+
+    try {
+      $file = $request->file('csv_file');
+
+      // ファイルが空でないかチェック
+      if ($file->getSize() == 0) {
+        return redirect()->route('admin.products.index')
+          ->with('error', 'CSVファイルが空です');
+      }
+
+      // ファイルをstorageに保存
+      $path = $request->file('csv_file')->store('imports', 'local');
+
+      // Importレコードを作成
+      $import = Import::create([
+        'user_id' => Auth::id(),
+        'file_path' => $path,
+        'status' => 'pending',
+        'progress' => 0,
+      ]);
+
+      // Jobをディスパッチ(キューに投入)
+      ImportProductsJob::dispatch($import->id, $path);
+
+      // 進捗確認用にimport_idを渡してリダイレクト
+      return redirect()->route('admin.products.index')
+        ->with('success', 'CSVインポート処理を受け付けました')
+        ->with('import_id', $import->id);
+
+    } catch (\Exception $e) {
+      Log::error('CSV Import Error: ' . $e->getMessage());
+      return redirect()->route('admin.products.index')
+        ->with('error', 'CSVのインポートに失敗しました: ' . $e->getMessage());
     }
   }
 }

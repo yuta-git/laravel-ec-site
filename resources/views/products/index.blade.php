@@ -1,14 +1,53 @@
 <x-app-layout>
   <x-slot name="header">
-    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-      商品一覧
-    </h2>
+    <div class="flex justify-between items-center">
+      <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        商品一覧
+      </h2>
+      <!-- CSV インポートフォーム-->
+      <form action="{{ route('admin.products.import') }}" method="POST" enctype="multipart/form-data" id="importForm">
+        @csrf
+        <input type="file" name="csv_file" id="csv_file" accept=".csv" style="display: none;"
+          onchange="this.form.submit()">
+        <button type="button" onclick="document.getElementById('csv_file').click()"
+          class="text-white bg-green-500 border-0 py-2 px-6 focus:outline-none hover:bg-green-600 rounded">
+          インポート
+        </button>
+      </form>
+
+    </div>
   </x-slot>
 
   @if (session('success'))
   <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pt-4">
     <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
       <span class="block sm:inline">{{ session('success') }}</span>
+    </div>
+  </div>
+  @endif
+
+  @if (session('error'))
+  <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pt-4">
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+      <span class="block sm:inline">{{ session('error') }}</span>
+    </div>
+  </div>
+  @endif
+
+  <!-- 進捗バー表示エリア -->
+  @if (session('import_id'))
+  <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pt-4" id="progress-container">
+    <div class="bg-blue-50 border border-blue-200 px-4 py-3 rounded">
+      <div class="flex items-center justify-between mb-2">
+        <h6 class="font-semibold text-blue-900">CSVインポート処理中</h6>
+        <span id="progress-text" class="font-semibold text-blue-900">0%</span>
+      </div>
+      <div class="flex-start flex h-2.5 w-full overflow-hidden rounded-full bg-blue-100 font-sans text-xs font-medium">
+        <div id="progress-bar"
+          class="flex items-center justify-center h-full overflow-hidden text-white break-all bg-blue-500 rounded-full transition-all duration-300"
+          style="width: 0%"></div>
+      </div>
+      <p id="status-text" class="text-sm text-blue-700 mt-2">処理を開始しています...</p>
     </div>
   </div>
   @endif
@@ -85,4 +124,55 @@
       </div>
     </div>
   </div>
+
+  <!-- 進捗確認用JavaScript -->
+  @if (session('import_id'))
+  <script>
+  const IMPORT_ID = '{{ session("import_id") }}';
+  const progressUrl = "{{ route('admin.imports.progress', ['import' => ':importId']) }}";
+
+  let progressInterval;
+
+  function fetchProgress(importId) {
+    fetch(progressUrl.replace(':importId', importId))
+      .then(response => response.json())
+      .then(data => {
+        // 進捗バー更新
+        document.getElementById('progress-bar').style.width = data.progress + '%';
+        document.getElementById('progress-text').innerText = data.progress + '%';
+
+        // ステータステキスト更新
+        if (data.status === 'processing') {
+          document.getElementById('status-text').innerText = '処理中...';
+        } else if (data.status === 'done') {
+          document.getElementById('status-text').innerText = `完了しました！（${data.imported_count || 0}件インポート）`;
+          document.getElementById('progress-container').classList.remove('bg-blue-50', 'border-blue-200');
+          document.getElementById('progress-container').classList.add('bg-green-50', 'border-green-200');
+          clearInterval(progressInterval);
+
+          // 3秒後にページをリロード
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
+        } else if (data.status === 'failed') {
+          document.getElementById('status-text').innerText = 'エラーが発生しました: ' + (data.error_message || '不明なエラー');
+          document.getElementById('progress-container').classList.remove('bg-blue-50', 'border-blue-200');
+          document.getElementById('progress-container').classList.add('bg-red-50', 'border-red-200');
+          clearInterval(progressInterval);
+        }
+      })
+      .catch(error => {
+        console.error('進捗取得エラー:', error);
+      });
+  }
+
+  // 初回実行
+  fetchProgress(IMPORT_ID);
+
+  // 1.5秒ごとにポーリング
+  progressInterval = setInterval(() => {
+    fetchProgress(IMPORT_ID);
+  }, 1500);
+  </script>
+  @endif
 </x-app-layout>
