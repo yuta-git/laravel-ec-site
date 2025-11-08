@@ -38,7 +38,11 @@ class ProductController extends Controller
       ->orderByDesc('updated_at')
       ->paginate(15);
 
-    return view('products.index', compact('products', 'categories', 'categoryId', 'search'));
+    $view = $request->route()->getName() === 'admin.products.index'
+      ? 'products.index'
+      : 'user.products.index';
+
+    return view($view, compact('products', 'categories', 'categoryId', 'search'));
   }
 
   /**
@@ -53,12 +57,17 @@ class ProductController extends Controller
   /**
    * Display the specified resource.
    */
-  public function show(string $uuid)
+  public function show(Request $request, string $uuid)
   {
     $product = Product::with(['category', 'productImages'])
       ->where('uuid', $uuid)->firstOrFail();
 
-    return view('products.show', compact('product'));
+    // ルート名に基づいてビューを切り替え
+    $view = $request->route()->getName() === 'admin.products.show'
+      ? 'products.show'
+      : 'user.products.show';
+
+    return view($view, compact('product'));
   }
 
   /**
@@ -248,7 +257,6 @@ class ProductController extends Controller
       return redirect()->route('admin.products.index')
         ->with('success', 'CSVインポート処理を受け付けました')
         ->with('import_id', $import->id);
-
     } catch (\Exception $e) {
       Log::error('CSV Import Error: ' . $e->getMessage());
       return redirect()->route('admin.products.index')

@@ -54,10 +54,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 
-// 一般ユーザー用ダッシュボード（認証不要）
-Route::get('/', function () {
-  return view('user.dashboard');
-})->name('user.dashboard');
+Route::name('user.')->group(function () {
+  // 一般ユーザー用ダッシュボード（認証不要）
+  Route::get('/', function () {
+    return view('user.dashboard');
+  })->name('dashboard');
+
+  // 商品(一般ユーザー用)
+  Route::prefix('products')
+    ->controller(ProductController::class)
+    ->name('products.')
+    ->group(function () {
+      Route::get('/', 'index')->name('index');
+      Route::get('/{uuid}', 'show')->name('show');
+    });
+});
 
 
 Route::middleware('auth')->group(function () {
