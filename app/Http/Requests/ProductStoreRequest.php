@@ -30,7 +30,6 @@ class ProductStoreRequest extends FormRequest
       'main_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
       'sub_image_1' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
       'sub_image_2' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-      'csv_file' => 'required|file|mimes:csv,txt|max:2048'
     ];
   }
   

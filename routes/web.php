@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ImportController;
+use App\Http\Controllers\user\CartController;
 
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -67,6 +68,18 @@ Route::name('user.')->group(function () {
     ->group(function () {
       Route::get('/', 'index')->name('index');
       Route::get('/{uuid}', 'show')->name('show');
+    });
+
+  // カート機能
+  Route::prefix('cart')
+    ->controller(CartController::class)
+    ->name('cart.')
+    ->group(function () {
+      Route::get('/', 'index')->name('index');
+      Route::post('/add', 'add')->name('add');
+      Route::post('/update/{productId}', 'update')->name('update');
+      Route::delete('/remove/{productId}', 'remove')->name('remove');
+      Route::get('/count', 'count')->name('count');
     });
 });
 

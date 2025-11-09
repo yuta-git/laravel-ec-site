@@ -4,6 +4,24 @@
       <h2 class="font-semibold text-xl text-gray-800 leading-tight">
         商品一覧
       </h2>
+      <a href="{{ route('user.cart.index') }}"
+        class="relative text-white bg-green-500 border-0 py-2 px-6 focus:outline-none hover:bg-green-600 rounded">
+        カートを見る
+        @php
+        $totalQuantity = 0;
+        if(session('cart')) {
+        foreach(session('cart') as $item) {
+        $totalQuantity += $item['quantity'];
+        }
+        }
+        @endphp
+        @if($totalQuantity > 0)
+        <span
+          class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+          {{ $totalQuantity }}
+        </span>
+        @endif
+      </a>
     </div>
   </x-slot>
 
@@ -67,7 +85,7 @@
                       <p class="leading-relaxed mb-3">
                         {{ number_format($product->price) }} 円
                       </p>
-                      <div class="flex items-center flex-wrap ">
+                      <div class="flex items-center justify-between">
                         <a class="text-indigo-500 inline-flex items-center md:mb-2 lg:mb-0"
                           href="{{ route('user.products.show', [ 'uuid' => $product->uuid ]) }}"> 詳細
                           <svg class="w-4 h-4 ml-2" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
@@ -76,6 +94,14 @@
                             <path d="M12 5l7 7-7 7"></path>
                           </svg>
                         </a>
+                        <form method="POST" action="{{ route('user.cart.add') }}" class="inline">
+                          @csrf
+                          <input type="hidden" name="product_id" value="{{ $product->id }}">
+                          <input type="hidden" name="quantity" value="1">
+                          <button type="submit" class="text-indigo-500 inline-flex items-center md:mb-2 lg:mb-0">
+                            カートに追加
+                          </button>
+                        </form>
                       </div>
                     </div>
                   </div>

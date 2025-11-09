@@ -32,7 +32,6 @@
                 </div>
               </a>
 
-
             </div>
           </div>
         </section>

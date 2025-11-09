@@ -4,7 +4,20 @@
       商品登録
     </h2>
   </x-slot>
-
+  <!-- バリデーションエラー（フィールド単位） -->
+  @if ($errors->any())
+  <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pt-4">
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+      <strong class="font-bold">エラーが発生しました:</strong>
+      <ul class="mt-2 list-disc list-inside">
+        @foreach ($errors->all() as $error)
+        <li>{{ $error }}</li>
+        @endforeach
+      </ul>
+    </div>
+  </div>
+  @endif
+  <!-- システムエラー（例外処理など） -->
   @if (session('error'))
   <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pt-4">
     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">

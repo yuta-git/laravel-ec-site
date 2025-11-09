@@ -16,9 +16,6 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Import;
 use App\Jobs\ImportProductsJob;
 
-// CSVライブラリ読み込み https://csv.thephpleague.com/
-use League\Csv\Reader;
-
 class ProductController extends Controller
 {
   /**
@@ -77,7 +74,7 @@ class ProductController extends Controller
   {
     // トランザクション開始（画像保存に失敗したら商品も作成しない）
     DB::beginTransaction();
-
+    
     try {
       // 商品レコードを作成（画像以外）
       $product = Product::create([
