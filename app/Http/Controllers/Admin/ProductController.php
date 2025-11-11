@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\ProductImage;
@@ -35,11 +36,7 @@ class ProductController extends Controller
       ->orderByDesc('updated_at')
       ->paginate(15);
 
-    $view = $request->route()->getName() === 'admin.products.index'
-      ? 'products.index'
-      : 'user.products.index';
-
-    return view($view, compact('products', 'categories', 'categoryId', 'search'));
+    return view('products.index', compact('products', 'categories', 'categoryId', 'search'));
   }
 
   /**
@@ -59,12 +56,7 @@ class ProductController extends Controller
     $product = Product::with(['category', 'productImages'])
       ->where('uuid', $uuid)->firstOrFail();
 
-    // ルート名に基づいてビューを切り替え
-    $view = $request->route()->getName() === 'admin.products.show'
-      ? 'products.show'
-      : 'user.products.show';
-
-    return view($view, compact('product'));
+    return view('products.show', compact('product'));
   }
 
   /**

@@ -8,14 +8,6 @@
       <a href="{{ route('user.cart.index') }}"
         class="relative text-white bg-green-500 border-0 py-2 px-6 focus:outline-none hover:bg-green-600 rounded">
         カート
-        @php
-        $totalQuantity = 0;
-        if(session('cart')) {
-        foreach(session('cart') as $item) {
-        $totalQuantity += $item['quantity'];
-        }
-        }
-        @endphp
         @if($totalQuantity > 0)
         <span id="cart-badge"
           class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
@@ -69,6 +61,15 @@
                 戻る</a>
             </div>
             <div class="container px-5 py-24 mx-auto">
+              @if(empty($cart))
+              <div class="text-center py-12">
+                <p class="text-gray-600 text-lg mb-6">カートに商品がありません</p>
+                <a href="{{ route('user.products.index') }}"
+                  class="text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">
+                  商品一覧へ
+                </a>
+              </div>
+              @else
               <div class="flex flex-wrap -m-4">
                 @foreach($cart as $productId => $item)
                 <div class="p-4 md:w-1/3">
@@ -128,6 +129,29 @@
                 </div>
                 @endforeach
               </div>
+              {{-- 合計金額表示--}}
+              <div class="mt-8 border-t pt-8">
+                <div class="max-w-lg ml-auto">
+                  <div class="bg-gray-50 p-6 rounded-lg">
+                    <div class="flex justify-between items-center mb-4">
+                      <span class="text-lg font-medium text-gray-700">合計</span>
+                      <span class="text-xl font-semibold" id="cart-total-price">
+                        {{ number_format($totalPrice) }} 円
+                      </span>
+                    </div>
+                    <div class="flex justify-between items-center mb-6 pb-6 border-b">
+                      <span class="text-lg font-medium text-gray-700">商品点数</span>
+                      <span class="text-lg" id="total-quantity">{{ $totalQuantity }}点</span>
+                    </div>
+                    <a href=""
+                      class="block w-full text-center text-white bg-indigo-500 border-0 py-3 px-6 focus:outline-none hover:bg-indigo-600 rounded text-lg">
+                      購入手続きへ進む
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              @endif
             </div>
           </section>
 
@@ -141,39 +165,61 @@
     const productId = button.dataset.productId;
     const action = button.dataset.action;
 
-    const quantityElement = document.getElementById(`quantity-${productId}`);
-    const subtotalElement = document.getElementById(`subtotal-${productId}`);
-    const decrementButton = document.getElementById(`decrement-${productId}`);
+    // アクションに応じてエンドポイントを決定
+    const endpoint = action === 'increment' ?
+      `{{ url('cart') }}/${productId}/increment` :
+      `{{ url('cart') }}/${productId}/decrement`;
 
-    fetch(`{{ url('cart/update') }}/${productId}`, {
+    fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-          action: action
-        })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          quantityElement.textContent = data.quantity;
-          subtotalElement.textContent = `小計: ${data.subtotal.toLocaleString()} 円`;
-
-          if (data.quantity <= 1) {
-            decrementButton.disabled = true;
-            decrementButton.classList.add('opacity-50', 'cursor-not-allowed');
-          } else {
-            decrementButton.disabled = false;
-            decrementButton.classList.remove('opacity-50', 'cursor-not-allowed');
-          }
-
-          // バッジを更新
-          updateCartBadge();
-        } else {
-          alert(data.message);
         }
+      })
+      .then(response => {
+        if (!response.ok) { // HTTPステータスで判定
+          return response.json().then(data => {
+            throw new Error(data.message || '更新に失敗しました');
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        // ここに来た時点で成功確定
+        const quantityElement = document.getElementById(`quantity-${productId}`);
+        const subtotalElement = document.getElementById(`subtotal-${productId}`);
+        const decrementButton = document.getElementById(`decrement-${productId}`);
+        const totalPriceElement = document.getElementById('cart-total-price');
+        const totalQuantityElement = document.getElementById('total-quantity');
+
+        // 個別商品の数量と小計を更新
+        quantityElement.textContent = data.quantity;
+        subtotalElement.textContent = `小計: ${data.subtotal.toLocaleString()} 円`;
+
+        // カート全体の合計金額を更新
+        if (totalPriceElement) {
+          totalPriceElement.textContent = `${data.total_price.toLocaleString()} 円`;
+        }
+
+        // 商品点数を更新
+        if (totalQuantityElement) {
+          totalQuantityElement.textContent = `${data.total_quantity}点`;
+        }
+
+        // マイナスボタンの制御
+        if (data.quantity <= 1) {
+          decrementButton.disabled = true;
+          decrementButton.classList.add('opacity-50', 'cursor-not-allowed');
+        } else {
+          decrementButton.disabled = false;
+          decrementButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        // バッジを更新
+        updateCartBadge();
+
+
       })
       .catch(error => {
         console.error('エラー:', error);
@@ -197,7 +243,8 @@
         }
       })
       .catch(error => {
-        console.error('バッジ更新エラー:', error);
+        console.error('エラー:', error);
+        alert(error.message);
       });
   }
   </script>

@@ -5,18 +5,63 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Http\Requests\CartAddRequest;
 
 class CartController extends Controller
 {
-  // カートに追加
-  public function add(Request $request)
+  /***
+   * カート表示
+   ***/
+  public function index(Request $request)
   {
-    $product = Product::with(['mainImage', 'category'])->findOrFail($request->product_id);
+    $cart = $request->session()->get('cart', []);
+
+    // ビジネスロジックをController側で処理
+    $totalQuantity = $this->calculateTotalQuantity($cart);
+    $totalPrice = $this->calculateTotalPrice($cart);
+
+    return view('user.cart.index', compact('cart', 'totalQuantity', 'totalPrice'));
+  }
+
+  /**
+   * カート内の合計数量を計算(プライベートメソッド)
+   */
+  private function calculateTotalQuantity(array $cart): int
+  {
+    $total = 0;
+    foreach ($cart as $item) {
+      $total += $item['quantity'];
+    }
+    return $total;
+  }
+
+  /**
+   * カート内の合計金額を計算(プライベートメソッド)
+   */
+  private function calculateTotalPrice(array $cart): int
+  {
+    $total = 0;
+    foreach ($cart as $item) {
+      $total += $item['unit_price'] * $item['quantity'];
+    }
+    return $total;
+  }
+
+  /***
+   * カートに追加
+   ****/
+  public function add(CartAddRequest $request)
+  {
+    // バリデーション
+    $validated = $request->validated();
+
+    $product = Product::with(['mainImage', 'category'])
+      ->findOrFail($request->product_id);
 
     $cartItem = [
       'product_id' => $product->id,
       'product_name' => $product->name,
-      'quantity' => $request->quantity ?? 1,
+      'quantity' => $validated['quantity'],  // バリデーション済みの値を使用
       'unit_price' => $product->price,
       'image_path' => $product->mainImage ? $product->mainImage->image_path : null,
       'category_name' => $product->category->name
@@ -24,9 +69,13 @@ class CartController extends Controller
 
     $cart = $request->session()->get('cart', []);
 
-    // 既に同じ商品がカートにある場合は数量を加算
     if (isset($cart[$product->id])) {
-      $cart[$product->id]['quantity'] += $cartItem['quantity'];
+      // 既存の数量と新規の数量の合計をチェック
+      $newQuantity = $cart[$product->id]['quantity'] + $validated['quantity'];
+      if ($newQuantity > 99) {
+        return redirect()->back()->with('error', 'カート内の数量は最大99までです');
+      }
+      $cart[$product->id]['quantity'] = $newQuantity;
     } else {
       $cart[$product->id] = $cartItem;
     }
@@ -36,15 +85,9 @@ class CartController extends Controller
     return redirect()->back()->with('success', 'カートに追加しました');
   }
 
-  // カート表示
-  public function index(Request $request)
-  {
-    $cart = $request->session()->get('cart', []);
-
-    return view('user.cart.index', compact('cart'));
-  }
-
-  // カートの商品を削除
+  /***
+   * カートの商品を削除
+   ***/
   public function remove(Request $request, $productId)
   {
     $cart = $request->session()->get('cart', []);
@@ -58,39 +101,62 @@ class CartController extends Controller
     return redirect()->back()->with('error', '商品が見つかりませんでした');
   }
 
-  /*** 
-  カートの商品を増減させる("-"と"+"アイコンを押したときの動き) 
-   ***/
-  public function update(Request $request, $productId)
+  /**
+   * 数量を増やす("+"を押したときの動き)
+   */
+  public function increment(Request $request, $productId)
+  {
+    return response()->json(
+      $this->updateQuantity($request, $productId, 1)
+    );
+  }
+
+  /**
+   * 数量を減らす("-"を押したときの動き)
+   */
+  public function decrement(Request $request, $productId)
+  {
+    return response()->json(
+      $this->updateQuantity($request, $productId, -1)
+    );
+  }
+
+  /**
+   * 数量更新の共通処理（プライベートメソッド）
+   */
+  private function updateQuantity(Request $request, $productId, $delta): array
   {
     $cart = $request->session()->get('cart', []);
 
     if (!isset($cart[$productId])) {
-      return response()->json([
-        'success' => false,
-        'message' => '商品が見つかりませんでした'
-      ], 404);
+      abort(404, '商品が見つかりませんでした');
     }
 
-    $action = $request->input('action');
-
-    if ($action === 'increment') {
-      $cart[$productId]['quantity']++;
-    } elseif ($action === 'decrement') {
-      if ($cart[$productId]['quantity'] > 1) {
-        $cart[$productId]['quantity']--;
-      }
+    // 減少の場合は最小値チェック
+    if ($delta < 0 && $cart[$productId]['quantity'] <= 1) {
+      abort(400, '数量は1以上である必要があります');
     }
 
+    // 数量を更新
+    $cart[$productId]['quantity'] += $delta;
+
+    // セッションに保存
     $request->session()->put('cart', $cart);
 
-    // JSON形式でレスポンスを返す
-    return response()->json([
-      'success' => true,
+    // カート全体の合計金額を計算
+    $totalPrice = 0;
+    $totalQuantity = 0;
+    foreach ($cart as $item) {
+      $totalPrice += $item['unit_price'] * $item['quantity'];
+      $totalQuantity += $item['quantity'];
+    }
+
+    return [
       'quantity' => $cart[$productId]['quantity'],
       'subtotal' => $cart[$productId]['unit_price'] * $cart[$productId]['quantity'],
-      'message' => '数量を更新しました'
-    ]);
+      'total_price' => $totalPrice,
+      'total_quantity' => $totalQuantity
+    ];
   }
 
   /*** 
