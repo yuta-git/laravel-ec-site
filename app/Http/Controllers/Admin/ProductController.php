@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\ProductImage;
@@ -15,9 +16,6 @@ use Illuminate\Support\Facades\Auth;
 
 use App\Models\Import;
 use App\Jobs\ImportProductsJob;
-
-// CSVライブラリ読み込み https://csv.thephpleague.com/
-use League\Csv\Reader;
 
 class ProductController extends Controller
 {
@@ -53,7 +51,7 @@ class ProductController extends Controller
   /**
    * Display the specified resource.
    */
-  public function show(string $uuid)
+  public function show(Request $request, string $uuid)
   {
     $product = Product::with(['category', 'productImages'])
       ->where('uuid', $uuid)->firstOrFail();
@@ -68,7 +66,7 @@ class ProductController extends Controller
   {
     // トランザクション開始（画像保存に失敗したら商品も作成しない）
     DB::beginTransaction();
-
+    
     try {
       // 商品レコードを作成（画像以外）
       $product = Product::create([
@@ -248,7 +246,6 @@ class ProductController extends Controller
       return redirect()->route('admin.products.index')
         ->with('success', 'CSVインポート処理を受け付けました')
         ->with('import_id', $import->id);
-
     } catch (\Exception $e) {
       Log::error('CSV Import Error: ' . $e->getMessage());
       return redirect()->route('admin.products.index')

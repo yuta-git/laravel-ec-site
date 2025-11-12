@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\ImportController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ImportController;
+use App\Http\Controllers\User\CartController;
 
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\User\ProductController as UserProductController;
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
@@ -19,7 +21,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // 商品(管理者用)
     Route::prefix('products')
       ->group(function () {
-        Route::controller(ProductController::class)
+        Route::controller(AdminProductController::class)
           ->name('products.')
           ->group(function () {
             Route::get('/', 'index')->name('index');
@@ -54,10 +56,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 
-// 一般ユーザー用ダッシュボード（認証不要）
-Route::get('/', function () {
-  return view('user.dashboard');
-})->name('user.dashboard');
+Route::name('user.')->group(function () {
+  // 一般ユーザー用ダッシュボード（認証不要）
+  Route::get('/', function () {
+    return view('user.dashboard');
+  })->name('dashboard');
+
+  // 商品(一般ユーザー用)
+  Route::prefix('products')
+    ->controller(UserProductController::class)
+    ->name('products.')
+    ->group(function () {
+      Route::get('/', 'index')->name('index');
+      Route::get('/{uuid}', 'show')->name('show');
+    });
+
+  // カート機能
+  Route::prefix('cart')
+    ->controller(CartController::class)
+    ->name('cart.')
+    ->group(function () {
+      Route::get('/', 'index')->name('index');
+      Route::post('/add', 'add')->name('add');
+      Route::post('/{productId}/increment', 'increment')->name('increment');
+      Route::post('/{productId}/decrement', 'decrement')->name('decrement');
+      Route::delete('/remove/{productId}', 'remove')->name('remove');
+      Route::get('/count', 'count')->name('count');
+    });
+});
 
 
 Route::middleware('auth')->group(function () {
