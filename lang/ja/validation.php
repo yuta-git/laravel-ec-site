@@ -185,5 +185,8 @@ return [
     'available' => '利用可能',
     'size' => 'サイズ',
     'sortOrder' => 'ソート順',
+    
+    'product_id' => '商品ID',
+    'quantity' => '数量',
   ],
 ];

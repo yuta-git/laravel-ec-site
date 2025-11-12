@@ -89,7 +89,7 @@
                       <div class="mb-3">
                         <div class="flex items-center space-x-2">
                           <button onclick="updateQuantity(this)" data-product-id="{{ $productId }}"
-                            data-action="decrement"
+                            data-url="{{ route('user.cart.decrement', ['productId' => $productId]) }}"
                             class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded"
                             id="decrement-{{ $productId }}" {{ $item['quantity'] <= 1 ? 'disabled' : '' }}>
                             -
@@ -100,7 +100,7 @@
                           </span>
 
                           <button onclick="updateQuantity(this)" data-product-id="{{ $productId }}"
-                            data-action="increment"
+                            data-url="{{ route('user.cart.increment', ['productId' => $productId]) }}"
                             class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1 px-3 rounded"
                             id="increment-{{ $productId }}">
                             +
@@ -163,12 +163,7 @@
   <script>
   function updateQuantity(button) {
     const productId = button.dataset.productId;
-    const action = button.dataset.action;
-
-    // アクションに応じてエンドポイントを決定
-    const endpoint = action === 'increment' ?
-      `{{ url('cart') }}/${productId}/increment` :
-      `{{ url('cart') }}/${productId}/decrement`;
+    const endpoint = button.dataset.url;
 
     fetch(endpoint, {
         method: 'POST',
