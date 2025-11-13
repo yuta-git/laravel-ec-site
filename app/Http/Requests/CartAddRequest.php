@@ -35,30 +35,4 @@ class CartAddRequest extends FormRequest
         ];
     }
 
-    /**
-     * カスタムエラーメッセージ
-     */
-    public function messages(): array
-    {
-        return [
-            'product_id.required' => '商品IDは必須です',
-            'product_id.integer' => '商品IDは整数である必要があります',
-            'product_id.exists' => '指定された商品が存在しません',
-            'quantity.required' => '数量は必須です',
-            'quantity.integer' => '数量は整数で入力してください',
-            'quantity.min' => '数量は1以上で入力してください',
-            'quantity.max' => '数量は99以下で入力してください'
-        ];
-    }
-
-    /**
-     * バリデーション失敗時の属性名
-     */
-    public function attributes(): array
-    {
-        return [
-            'product_id' => '商品ID',
-            'quantity' => '数量'
-        ];
-    }
 }
