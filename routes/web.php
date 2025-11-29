@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ImportController;
 use App\Http\Controllers\User\CartController;
+use App\Http\Controllers\User\OrderController;
 
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\User\ProductController as UserProductController;
@@ -52,6 +53,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // CSVインポートの進捗確認API用ルート
     Route::get('/imports/{import}/progress', [ImportController::class, 'progress'])
       ->name('imports.progress');
+
+    // 注文機能
+    Route::prefix('orders')
+      ->controller(OrderController::class)
+      ->name('orders.')
+      ->group(function () {
+        Route::get('/', 'index')->name('index');
+      });
   });
 });
 
@@ -82,6 +91,15 @@ Route::name('user.')->group(function () {
       Route::post('/{productId}/decrement', 'decrement')->name('decrement');
       Route::delete('/remove/{productId}', 'remove')->name('remove');
       Route::get('/count', 'count')->name('count');
+    });
+
+  // 注文機能
+  Route::prefix('orders')
+    ->controller(OrderController::class)
+    ->name('orders.')
+    ->group(function () {
+      Route::get('/create', 'create')->name('create');
+      Route::post('/', 'store')->name('store');
     });
 });
 

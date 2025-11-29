@@ -143,7 +143,7 @@
                       <span class="text-lg font-medium text-gray-700">商品点数</span>
                       <span class="text-lg" id="total-quantity">{{ $totalQuantity }}点</span>
                     </div>
-                    <a href=""
+                    <a href="{{ route('user.orders.create') }}"
                       class="block w-full text-center text-white bg-indigo-500 border-0 py-3 px-6 focus:outline-none hover:bg-indigo-600 rounded text-lg">
                       購入手続きへ進む
                     </a>
