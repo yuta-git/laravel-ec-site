@@ -4,10 +4,13 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\OrderItem;
+
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+
+use App\Http\Requests\StoreOrderRequest;
+
 
 class OrderController extends Controller
 {
@@ -39,14 +42,10 @@ class OrderController extends Controller
   /**
    * 注文確定処理
    */
-  public function store(Request $request)
+  public function store(StoreOrderRequest $request)
   {
     // バリデーション
-    $validated = $request->validate([
-      'customer_name' => ['required', 'string', 'max:100'],
-      'phone_number' => ['required', 'string', 'max:20'],
-      'address' => ['required', 'string', 'max:255'],
-    ]);
+    $validated = $request->validated();
 
     $cart = $request->session()->get('cart', []);
 
@@ -98,19 +97,26 @@ class OrderController extends Controller
       DB::commit();
 
       // 注文詳細画面へリダイレクト
-      return redirect()->route('user.cart.index')
-        ->with('success', '注文が確定しました。カートが空になりました。');
+      return redirect()->route('user.orders.complete');
     } catch (\Exception $e) {
       DB::rollBack();
 
       return redirect()->route('user.cart.index')
-        ->with('error', '注文処理に失敗しました: ' . $e->getMessage());
+        ->with('error', '申し訳ありません。注文処理に失敗しました。時間をおいて再度お試しください。');
     }
   }
 
   /**
-   * 注文履歴一覧
-   */
+   * 注文完了ページ
+   **/
+  public function complete()
+  {
+    return view('user.orders.complete');
+  }
+
+  /**
+   * 注文履歴一覧 (管理者ページ)
+   **/
   public function index()
   {
     // 最新の注文から表示
@@ -120,5 +126,4 @@ class OrderController extends Controller
 
     return view('user.orders.index', compact('orders'));
   }
-
 }

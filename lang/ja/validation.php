@@ -188,5 +188,9 @@ return [
     
     'product_id' => '商品ID',
     'quantity' => '数量',
+
+    'customer_name' => 'お名前',
+    'phone_number' => '電話番号',
+    'address' => 'ご住所'
   ],
 ];

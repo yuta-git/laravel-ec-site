@@ -100,6 +100,7 @@ Route::name('user.')->group(function () {
     ->group(function () {
       Route::get('/create', 'create')->name('create');
       Route::post('/', 'store')->name('store');
+      Route::get('/complete', 'complete')->name('complete'); 
     });
 });
 
