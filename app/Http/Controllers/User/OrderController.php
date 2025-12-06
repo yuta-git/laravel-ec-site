@@ -60,9 +60,9 @@ class OrderController extends Controller
     try {
       // 注文を作成
       $order = Order::create([
-        'customer_name' => $validated['customer_name'],
-        'phone_number' => $validated['phone_number'],
-        'address' => $validated['address'],
+        'customer_name' => $request->customer_name,
+        'phone_number'  => $request->phone_number,
+        'address'       => $request->address,
       ]);
 
       // 注文明細を作成
